@@ -2,6 +2,14 @@
 
 import type { Era, EraDef } from "@/types";
 
+/** 年代→地図タイルの出典ラベル */
+const TILE_LABELS: Record<Era, string> = {
+  1900: "陸軍撮影航空写真 (1936-42)",
+  1955: "米軍撮影航空写真 (1945-50)",
+  1985: "旧版航空写真 (1961-69)",
+  2025: "現在の地図",
+};
+
 type Props = {
   eras: EraDef[];
   currentEra: Era;
@@ -53,9 +61,12 @@ export default function YearSlider({ eras, currentEra, onChange }: Props) {
         ))}
       </div>
 
-      {/* 一行説明 */}
+      {/* 一行説明 + 地図出典 */}
       <p className="text-[11px] leading-tight text-white/60">
         {currentDef.description}
+      </p>
+      <p className="text-[9px] text-white/30">
+        {TILE_LABELS[currentEra]}
       </p>
     </div>
   );
