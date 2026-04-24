@@ -3,9 +3,17 @@
 import type { Era } from "@/types";
 
 /** 地形ポリゴンの凡例定義 */
-const TERRAIN_LEGEND: { type: string; label: string; color: string; maxEra?: number; minEra?: number }[] = [
-  { type: "water", label: "旧水域", color: "#1a6fa0", maxEra: 1900 },
-  { type: "waterway", label: "旧水路", color: "#2d8fc4", maxEra: 1955 },
+const TERRAIN_LEGEND: {
+  type: string;
+  label: string;
+  color: string;
+  maxEra?: number;
+  minEra?: number;
+}[] = [
+  { type: "water", label: "海・入江", color: "#1a6fa0" },
+  { type: "marsh", label: "低湿地", color: "#4a7c59", maxEra: 1456 },
+  { type: "floodplain", label: "氾濫原", color: "#6b9daa", maxEra: 1603 },
+  { type: "waterway", label: "水路・運河", color: "#2d8fc4", minEra: 1603, maxEra: 1955 },
   { type: "district", label: "歴史的街区", color: "#c4713b", minEra: 1900, maxEra: 1955 },
   { type: "redevelopment", label: "再開発", color: "#a8e6cf", minEra: 1985 },
 ];
@@ -15,7 +23,6 @@ type Props = {
 };
 
 export default function Legend({ currentEra }: Props) {
-  // 現在の年代に表示されるものだけ凡例に出す
   const visible = TERRAIN_LEGEND.filter((item) => {
     const min = item.minEra ?? 0;
     const max = item.maxEra ?? 9999;

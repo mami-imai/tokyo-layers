@@ -1,7 +1,7 @@
 import type { Feature, Point, Polygon, MultiPolygon, FeatureCollection } from "geojson";
 
-/** 対応する年代 */
-export type Era = 1900 | 1955 | 1985 | 2025;
+/** 対応する年代（number に緩めて任意の時点を追加可能に） */
+export type Era = number;
 
 /** 年代レイヤー定義 */
 export type EraDef = {
@@ -40,7 +40,7 @@ export type StoryEntry = {
 export type PointStory = Partial<Record<string, StoryEntry>>;
 
 /** 地形ポリゴンの種別 */
-export type TerrainType = "water" | "waterway" | "district" | "redevelopment";
+export type TerrainType = "water" | "waterway" | "district" | "redevelopment" | "marsh" | "floodplain";
 
 /** 地形ポリゴンの properties */
 export type TerrainProperties = {

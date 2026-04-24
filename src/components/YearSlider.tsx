@@ -3,7 +3,10 @@
 import type { Era, EraDef } from "@/types";
 
 /** 年代→地図タイルの出典ラベル */
-const TILE_LABELS: Record<Era, string> = {
+const TILE_LABELS: Record<number, string> = {
+  1000: "色別標高図（国土地理院）",
+  1456: "色別標高図（国土地理院）",
+  1603: "治水地形分類図（国土地理院）",
   1900: "陸軍撮影航空写真 (1936-42)",
   1955: "米軍撮影航空写真 (1945-50)",
   1985: "旧版航空写真 (1961-69)",
@@ -21,7 +24,7 @@ export default function YearSlider({ eras, currentEra, onChange }: Props) {
   const currentDef = eras[currentIndex];
 
   return (
-    <div className="flex flex-col gap-2 px-5 py-3">
+    <div className="flex flex-col gap-1.5 px-4 py-3">
       {/* 年代ラベル + 説明 */}
       <div className="flex items-baseline justify-between">
         <span
@@ -44,16 +47,16 @@ export default function YearSlider({ eras, currentEra, onChange }: Props) {
         className="year-slider w-full"
       />
 
-      {/* ステップラベル */}
+      {/* ステップラベル: 7個あるのでコンパクトに */}
       <div className="flex justify-between">
         {eras.map((era) => (
           <button
             key={era.year}
             onClick={() => onChange(era.year)}
-            className={`text-[10px] tabular-nums transition-colors ${
+            className={`min-w-0 text-[9px] tabular-nums transition-colors ${
               era.year === currentEra
                 ? "font-bold text-white"
-                : "text-white/40"
+                : "text-white/35"
             }`}
           >
             {era.year}
@@ -66,7 +69,7 @@ export default function YearSlider({ eras, currentEra, onChange }: Props) {
         {currentDef.description}
       </p>
       <p className="text-[9px] text-white/30">
-        {TILE_LABELS[currentEra]}
+        {TILE_LABELS[currentEra] ?? "地形図"}
       </p>
     </div>
   );

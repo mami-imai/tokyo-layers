@@ -39,18 +39,31 @@ function rasterStyle(
 /**
  * 年代 → ベーススタイル
  *
- * 1900: 明治期の低湿地帯（swale）— 海岸線・湿地が可視化された地形図
- *       + 陸軍撮影航空写真（ort_riku10, 1936-42）をオーバーレイ
- * 1955: 米軍撮影航空写真（ort_USA10, 1945-50）— 戦後直後の焼け野原
- * 1985: 旧版航空写真（ort_old10, 1961-69）— 高度成長期
- * 2025: CARTO Dark Matter（現代ベクタースタイル）
+ * 古代 (1000/1456/1603): 色別標高図・治水地形分類図 — 地形から古代の海岸線を読む
+ * 1900: 陸軍撮影航空写真 (1936-42)
+ * 1955: 米軍撮影航空写真 (1945-50)
+ * 1985: 旧版航空写真 (1961-69)
+ * 2025: CARTO Dark Matter
  */
 type EraStyleDef = {
   style: string | maplibregl.StyleSpecification;
   label: string;
 };
 
-const ERA_STYLES: Record<Era, EraStyleDef> = {
+/** eras JSON から動的に解決する。未定義年代は色別標高図にフォールバック */
+const ERA_STYLE_MAP: Record<number, EraStyleDef> = {
+  1000: {
+    style: rasterStyle("https://cyberjapandata.gsi.go.jp/xyz/relief"),
+    label: "色別標高図（国土地理院）",
+  },
+  1456: {
+    style: rasterStyle("https://cyberjapandata.gsi.go.jp/xyz/relief"),
+    label: "色別標高図（国土地理院）",
+  },
+  1603: {
+    style: rasterStyle("https://cyberjapandata.gsi.go.jp/xyz/lcmfc2"),
+    label: "治水地形分類図（国土地理院）",
+  },
   1900: {
     style: rasterStyle("https://cyberjapandata.gsi.go.jp/xyz/ort_riku10"),
     label: "陸軍撮影航空写真 (1936-42)",
@@ -69,6 +82,15 @@ const ERA_STYLES: Record<Era, EraStyleDef> = {
   },
 };
 
+const FALLBACK_STYLE: EraStyleDef = {
+  style: rasterStyle("https://cyberjapandata.gsi.go.jp/xyz/relief"),
+  label: "色別標高図",
+};
+
+function getEraStyle(era: Era): EraStyleDef {
+  return ERA_STYLE_MAP[era] ?? FALLBACK_STYLE;
+}
+
 // --- レイヤーID ---
 const SOURCE_POINTS = "tokyo-points";
 const SOURCE_TERRAINS = "tokyo-terrains";
@@ -76,6 +98,8 @@ const LAYER_CIRCLE = "points-circle";
 const LAYER_LABEL = "points-label";
 const LAYER_TERRAIN_WATER = "terrain-water";
 const LAYER_TERRAIN_WATERWAY = "terrain-waterway";
+const LAYER_TERRAIN_MARSH = "terrain-marsh";
+const LAYER_TERRAIN_FLOODPLAIN = "terrain-floodplain";
 const LAYER_TERRAIN_DISTRICT = "terrain-district";
 const LAYER_TERRAIN_REDEV = "terrain-redevelopment";
 const LAYER_TERRAIN_OUTLINE = "terrain-outline";
@@ -140,6 +164,20 @@ export default function MapView({
         source: SOURCE_TERRAINS,
         paint: { "fill-color": "#2d8fc4", "fill-opacity": 0.5 },
         filter: terrainFilter(era, "waterway"),
+      });
+      map.addLayer({
+        id: LAYER_TERRAIN_MARSH,
+        type: "fill",
+        source: SOURCE_TERRAINS,
+        paint: { "fill-color": "#4a7c59", "fill-opacity": 0.4 },
+        filter: terrainFilter(era, "marsh"),
+      });
+      map.addLayer({
+        id: LAYER_TERRAIN_FLOODPLAIN,
+        type: "fill",
+        source: SOURCE_TERRAINS,
+        paint: { "fill-color": "#6b9daa", "fill-opacity": 0.35 },
+        filter: terrainFilter(era, "floodplain"),
       });
       map.addLayer({
         id: LAYER_TERRAIN_DISTRICT,
@@ -228,18 +266,11 @@ export default function MapView({
       );
 
       map.setFilter(LAYER_TERRAIN_WATER, terrainFilter(era, "water"));
-      map.setFilter(
-        LAYER_TERRAIN_WATERWAY,
-        terrainFilter(era, "waterway")
-      );
-      map.setFilter(
-        LAYER_TERRAIN_DISTRICT,
-        terrainFilter(era, "district")
-      );
-      map.setFilter(
-        LAYER_TERRAIN_REDEV,
-        terrainFilter(era, "redevelopment")
-      );
+      map.setFilter(LAYER_TERRAIN_WATERWAY, terrainFilter(era, "waterway"));
+      map.setFilter(LAYER_TERRAIN_MARSH, terrainFilter(era, "marsh"));
+      map.setFilter(LAYER_TERRAIN_FLOODPLAIN, terrainFilter(era, "floodplain"));
+      map.setFilter(LAYER_TERRAIN_DISTRICT, terrainFilter(era, "district"));
+      map.setFilter(LAYER_TERRAIN_REDEV, terrainFilter(era, "redevelopment"));
       map.setFilter(LAYER_TERRAIN_OUTLINE, [
         "all",
         ["<=", ["coalesce", ["get", "minEra"], 0], era],
@@ -254,7 +285,7 @@ export default function MapView({
   const initMap = useCallback(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const initialStyle = ERA_STYLES[currentEra].style;
+    const initialStyle = getEraStyle(currentEra).style;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -325,7 +356,7 @@ export default function MapView({
 
     // スタイルが変わる → setStyle して再構築
     readyRef.current = false;
-    const newStyle = ERA_STYLES[currentEra].style;
+    const newStyle = getEraStyle(currentEra).style;
 
     // 現在のカメラ位置を保存
     const curCenter = map.getCenter();
